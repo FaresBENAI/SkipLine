@@ -1,9 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { QrCode, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react'
+import { QrCode, Eye, EyeOff, LogIn, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button, Input, Card } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
 import { isValidEmail } from '@/lib/utils'
@@ -18,6 +18,28 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<Partial<AuthFormData>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+
+  useEffect(() => {
+    // Récupérer les messages depuis l'URL
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const messageParam = urlParams.get('message')
+      const errorParam = urlParams.get('error')
+      
+      if (messageParam === 'confirmed') {
+        setMessage({
+          type: 'success',
+          text: 'Email confirmé avec succès ! Vous pouvez maintenant vous connecter.'
+        })
+      } else if (errorParam === 'callback') {
+        setMessage({
+          type: 'error',
+          text: 'Erreur lors de la confirmation. Veuillez réessayer.'
+        })
+      }
+    }
+  }, [])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -85,6 +107,7 @@ export default function LoginPage() {
     if (!validateForm()) return
 
     setLoading(true)
+    setMessage(null)
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -94,9 +117,14 @@ export default function LoginPage() {
 
       if (error) {
         if (error.message.includes('Email not confirmed')) {
-          setErrors({ email: 'Veuillez confirmer votre email avant de vous connecter' })
-        } else {
+          setMessage({
+            type: 'error',
+            text: 'Veuillez confirmer votre email avant de vous connecter. Vérifiez votre boîte mail.'
+          })
+        } else if (error.message.includes('Invalid login credentials')) {
           setErrors({ email: 'Email ou mot de passe incorrect' })
+        } else {
+          setErrors({ email: error.message })
         }
         return
       }
@@ -136,6 +164,24 @@ export default function LoginPage() {
             Accédez à votre espace SkipLine
           </p>
         </div>
+
+        {/* Message de succès/erreur */}
+        {message && (
+          <div className={`mb-6 p-4 rounded-xl border ${
+            message.type === 'success' 
+              ? 'bg-green-50 border-green-200 text-green-700' 
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
+            <div className="flex items-center space-x-2">
+              {message.type === 'success' ? (
+                <CheckCircle className="h-5 w-5" />
+              ) : (
+                <AlertCircle className="h-5 w-5" />
+              )}
+              <p className="text-sm font-medium">{message.text}</p>
+            </div>
+          </div>
+        )}
 
         {/* Formulaire */}
         <Card>

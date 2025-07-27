@@ -1,109 +1,64 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { QrCode } from 'lucide-react'
 
-// Force la page à être dynamique
+// Force la page à être dynamique pour éviter les problèmes de build
 export const dynamic = 'force-dynamic'
 
 export default function AuthCallback() {
   const router = useRouter()
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    const handleCallback = async () => {
       try {
-        // Récupérer les paramètres depuis l'URL côté client
-        const urlParams = new URLSearchParams(window.location.search)
-        const code = urlParams.get('code')
+        // Attendre que la page soit montée côté client
+        await new Promise(resolve => setTimeout(resolve, 100))
         
-        if (code) {
-          // Échanger le code contre une session
-          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        // Utiliser window.location directement pour éviter les problèmes de SSR
+        const hash = window.location.hash
+        const search = window.location.search
+        
+        // Supabase peut envoyer les tokens dans le hash ou les query params
+        let accessToken = null
+        let refreshToken = null
+        
+        if (hash) {
+          const hashParams = new URLSearchParams(hash.substring(1))
+          accessToken = hashParams.get('access_token')
+          refreshToken = hashParams.get('refresh_token')
+        }
+        
+        if (search) {
+          const searchParams = new URLSearchParams(search)
+          // Parfois Supabase envoie un code qu'il faut échanger
+          const code = searchParams.get('code')
           
-          if (error) {
-            console.error('Erreur lors de l\'échange du code:', error)
-            setError('Erreur lors de la confirmation de votre email')
+          if (code) {
+            // Rediriger vers la page de connexion avec le message
+            router.replace('/auth/login?message=confirmed')
             return
           }
-
-          if (data.user) {
-            // Déterminer le type d'utilisateur et rediriger
-            await redirectToCorrectDashboard(data.user.id)
-          }
+        }
+        
+        if (accessToken) {
+          // Si on a les tokens, rediriger vers le dashboard
+          router.replace('/dashboard')
         } else {
-          setError('Code de confirmation manquant')
+          // Sinon rediriger vers la connexion
+          router.replace('/auth/login?message=confirmed')
         }
-      } catch (err) {
-        console.error('Erreur callback:', err)
-        setError('Une erreur est survenue')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    const redirectToCorrectDashboard = async (userId: string) => {
-      try {
-        // Vérifier si c'est une entreprise
-        const { data: company, error: companyError } = await supabase
-          .from('companies')
-          .select('id')
-          .eq('id', userId)
-          .single()
-
-        if (company && !companyError) {
-          router.replace('/dashboard/company')
-          return
-        }
-
-        // Vérifier si c'est un client
-        const { data: client, error: clientError } = await supabase
-          .from('users')
-          .select('id')
-          .eq('id', userId)
-          .single()
-
-        if (client && !clientError) {
-          router.replace('/dashboard/client')
-          return
-        }
-
-        // Si aucun profil trouvé, rediriger vers l'accueil
-        router.replace('/')
       } catch (error) {
-        console.error('Erreur lors de la redirection:', error)
-        router.replace('/')
+        console.error('Erreur callback:', error)
+        router.replace('/auth/login?error=callback')
       }
     }
 
-    // Attendre que la page soit montée côté client
     if (typeof window !== 'undefined') {
-      handleAuthCallback()
+      handleCallback()
     }
   }, [router])
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50 flex items-center justify-center p-4">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 p-8 text-center max-w-md">
-          <div className="bg-red-100 p-3 rounded-xl w-fit mx-auto mb-4">
-            <QrCode className="h-8 w-8 text-red-600" />
-          </div>
-          <h1 className="text-xl font-bold text-gray-900 mb-2">Erreur de confirmation</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <a 
-            href="/auth/login"
-            className="bg-gradient-to-r from-violet-600 to-cyan-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-semibold inline-block"
-          >
-            Retour à la connexion
-          </a>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50 flex items-center justify-center p-4">
@@ -113,7 +68,7 @@ export default function AuthCallback() {
         </div>
         <h1 className="text-xl font-bold text-gray-900 mb-2">Confirmation en cours...</h1>
         <div className="animate-spin rounded-full h-6 w-6 border-4 border-violet-200 border-t-violet-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Redirection vers votre dashboard...</p>
+        <p className="text-gray-600">Vérification de votre email...</p>
       </div>
     </div>
   )
