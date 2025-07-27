@@ -18,17 +18,22 @@ export default function LoginPage() {
   const [errors, setErrors] = useState<Partial<AuthFormData>>({})
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string[]>([])
+
+  const addDebug = (msg: string) => {
+    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
+  }
 
   useEffect(() => {
     const checkSession = async () => {
-      console.log('🔍 Vérification session existante...')
+      addDebug('Vérification session existante...')
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        console.log('✅ Session trouvée:', session.user.email)
+        addDebug(`Session trouvée pour: ${session.user.email}`)
         await redirectToCorrectDashboard(session.user.id)
       } else {
-        console.log('❌ Aucune session existante')
+        addDebug('Aucune session existante')
       }
     }
 
@@ -48,11 +53,6 @@ export default function LoginPage() {
         setMessage({
           type: 'error',
           text: 'Erreur lors de la confirmation. Veuillez réessayer.'
-        })
-      } else if (errorParam === 'no-profile') {
-        setMessage({
-          type: 'error',
-          text: 'Aucun profil trouvé. Veuillez créer un nouveau compte.'
         })
       }
     }
@@ -85,7 +85,7 @@ export default function LoginPage() {
 
   const redirectToCorrectDashboard = async (userId: string) => {
     try {
-      console.log('🔍 Recherche du profil pour:', userId)
+      addDebug(`Recherche du profil pour: ${userId}`)
       
       // Vérifier si c'est une entreprise
       const { data: company, error: companyError } = await supabase
@@ -94,11 +94,12 @@ export default function LoginPage() {
         .eq('id', userId)
         .single()
 
-      console.log('Recherche entreprise:', { company, companyError })
-
       if (company && !companyError) {
-        console.log('✅ Entreprise trouvée, redirection vers /dashboard/company')
-        router.replace('/dashboard/company')
+        addDebug(`Entreprise trouvée: ${company.name}`)
+        setMessage({ type: 'info', text: 'Redirection vers le dashboard entreprise...' })
+        setTimeout(() => {
+          router.replace('/dashboard/company')
+        }, 1000)
         return
       }
 
@@ -109,25 +110,24 @@ export default function LoginPage() {
         .eq('id', userId)
         .single()
 
-      console.log('Recherche client:', { client, clientError })
-
       if (client && !clientError) {
-        console.log('✅ Client trouvé, redirection vers /dashboard/client')
-        router.replace('/dashboard/client')
+        addDebug(`Client trouvé: ${client.first_name} ${client.last_name}`)
+        setMessage({ type: 'info', text: 'Redirection vers le dashboard client...' })
+        setTimeout(() => {
+          router.replace('/dashboard/client')
+        }, 1000)
         return
       }
 
       // Si aucun profil trouvé
-      console.log('❌ Aucun profil trouvé')
-      await supabase.auth.signOut()
+      addDebug('Aucun profil trouvé dans les tables')
       setMessage({
         type: 'error',
-        text: 'Aucun profil trouvé. Veuillez créer un nouveau compte.'
+        text: 'Aucun profil trouvé. Il y a eu un problème lors de l\'inscription.'
       })
       
     } catch (error) {
-      console.error('❌ Erreur lors de la détermination du type d\'utilisateur:', error)
-      await supabase.auth.signOut()
+      addDebug(`Erreur: ${error}`)
       setMessage({
         type: 'error',
         text: 'Erreur lors de la connexion. Veuillez réessayer.'
@@ -138,7 +138,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('🚀 Tentative de connexion pour:', formData.email)
+    addDebug(`Tentative de connexion pour: ${formData.email}`)
     
     if (!validateForm()) return
 
@@ -151,10 +151,8 @@ export default function LoginPage() {
         password: formData.password
       })
 
-      console.log('Résultat connexion:', { data: data?.user?.email, error })
-
       if (error) {
-        console.error('❌ Erreur connexion:', error)
+        addDebug(`Erreur connexion: ${error.message}`)
         if (error.message.includes('Email not confirmed')) {
           setMessage({
             type: 'error',
@@ -169,14 +167,14 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        console.log('✅ Connexion réussie pour:', data.user.email)
+        addDebug(`Connexion réussie pour: ${data.user.email}`)
         await redirectToCorrectDashboard(data.user.id)
       } else {
-        console.error('❌ Aucun utilisateur dans la réponse')
+        addDebug('Aucun utilisateur dans la réponse')
         setErrors({ email: 'Erreur de connexion' })
       }
     } catch (error) {
-      console.error('❌ Erreur de connexion:', error)
+      addDebug(`Exception: ${error}`)
       setErrors({ email: 'Une erreur est survenue' })
     } finally {
       setLoading(false)
@@ -206,10 +204,22 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Debug Info */}
+        {debugInfo.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-100 rounded-xl max-h-32 overflow-y-auto">
+            <h3 className="text-sm font-semibold mb-2">Debug:</h3>
+            {debugInfo.map((info, index) => (
+              <p key={index} className="text-xs text-gray-600">{info}</p>
+            ))}
+          </div>
+        )}
+
         {message && (
           <div className={`mb-6 p-4 rounded-xl border ${
             message.type === 'success' 
-              ? 'bg-green-50 border-green-200 text-green-700' 
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : message.type === 'info'
+              ? 'bg-blue-50 border-blue-200 text-blue-700' 
               : 'bg-red-50 border-red-200 text-red-700'
           }`}>
             <div className="flex items-center space-x-2">
