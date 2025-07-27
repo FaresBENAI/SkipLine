@@ -22,9 +22,13 @@ export default function LoginPage() {
 
   useEffect(() => {
     const checkSession = async () => {
+      console.log('🔍 Vérification session existante...')
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
+        console.log('✅ Session trouvée:', session.user.email)
         await redirectToCorrectDashboard(session.user.id)
+      } else {
+        console.log('❌ Aucune session existante')
       }
     }
 
@@ -44,6 +48,11 @@ export default function LoginPage() {
         setMessage({
           type: 'error',
           text: 'Erreur lors de la confirmation. Veuillez réessayer.'
+        })
+      } else if (errorParam === 'no-profile') {
+        setMessage({
+          type: 'error',
+          text: 'Aucun profil trouvé. Veuillez créer un nouveau compte.'
         })
       }
     }
@@ -76,14 +85,19 @@ export default function LoginPage() {
 
   const redirectToCorrectDashboard = async (userId: string) => {
     try {
+      console.log('🔍 Recherche du profil pour:', userId)
+      
       // Vérifier si c'est une entreprise
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, name, email')
         .eq('id', userId)
         .single()
 
+      console.log('Recherche entreprise:', { company, companyError })
+
       if (company && !companyError) {
+        console.log('✅ Entreprise trouvée, redirection vers /dashboard/company')
         router.replace('/dashboard/company')
         return
       }
@@ -91,29 +105,40 @@ export default function LoginPage() {
       // Vérifier si c'est un client
       const { data: client, error: clientError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, first_name, last_name, email')
         .eq('id', userId)
         .single()
 
+      console.log('Recherche client:', { client, clientError })
+
       if (client && !clientError) {
+        console.log('✅ Client trouvé, redirection vers /dashboard/client')
         router.replace('/dashboard/client')
         return
       }
 
-      // Si aucun profil trouvé, rediriger vers l'inscription
-      console.log('Aucun profil trouvé, redirection vers inscription')
+      // Si aucun profil trouvé
+      console.log('❌ Aucun profil trouvé')
       await supabase.auth.signOut()
-      router.replace('/auth/register?error=no-profile')
+      setMessage({
+        type: 'error',
+        text: 'Aucun profil trouvé. Veuillez créer un nouveau compte.'
+      })
       
     } catch (error) {
-      console.error('Erreur lors de la détermination du type d\'utilisateur:', error)
+      console.error('❌ Erreur lors de la détermination du type d\'utilisateur:', error)
       await supabase.auth.signOut()
-      router.replace('/auth/register?error=profile-error')
+      setMessage({
+        type: 'error',
+        text: 'Erreur lors de la connexion. Veuillez réessayer.'
+      })
     }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    console.log('🚀 Tentative de connexion pour:', formData.email)
     
     if (!validateForm()) return
 
@@ -126,7 +151,10 @@ export default function LoginPage() {
         password: formData.password
       })
 
+      console.log('Résultat connexion:', { data: data?.user?.email, error })
+
       if (error) {
+        console.error('❌ Erreur connexion:', error)
         if (error.message.includes('Email not confirmed')) {
           setMessage({
             type: 'error',
@@ -141,10 +169,14 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        console.log('✅ Connexion réussie pour:', data.user.email)
         await redirectToCorrectDashboard(data.user.id)
+      } else {
+        console.error('❌ Aucun utilisateur dans la réponse')
+        setErrors({ email: 'Erreur de connexion' })
       }
     } catch (error) {
-      console.error('Erreur de connexion:', error)
+      console.error('❌ Erreur de connexion:', error)
       setErrors({ email: 'Une erreur est survenue' })
     } finally {
       setLoading(false)
