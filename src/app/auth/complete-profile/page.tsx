@@ -123,33 +123,31 @@ export default function CompleteProfile() {
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-center mb-6">Vous êtes :</h2>
                 
-                <Button
+                <button
                   onClick={() => setUserType('company')}
-                  className="w-full h-16 text-left justify-start"
-                  variant="outline"
+                  className="w-full h-16 p-4 text-left border-2 border-gray-200 rounded-xl hover:border-violet-300 hover:bg-violet-50 transition-all duration-200 flex items-center"
                 >
-                  <Building className="h-6 w-6 mr-3" />
+                  <Building className="h-6 w-6 mr-3 text-violet-600" />
                   <div>
-                    <div className="font-semibold">Une entreprise</div>
+                    <div className="font-semibold text-gray-900">Une entreprise</div>
                     <div className="text-sm text-gray-500">
                       Gérer des files d'attente
                     </div>
                   </div>
-                </Button>
+                </button>
 
-                <Button
+                <button
                   onClick={() => setUserType('client')}
-                  className="w-full h-16 text-left justify-start"
-                  variant="outline"
+                  className="w-full h-16 p-4 text-left border-2 border-gray-200 rounded-xl hover:border-cyan-300 hover:bg-cyan-50 transition-all duration-200 flex items-center"
                 >
-                  <User className="h-6 w-6 mr-3" />
+                  <User className="h-6 w-6 mr-3 text-cyan-600" />
                   <div>
-                    <div className="font-semibold">Un client</div>
+                    <div className="font-semibold text-gray-900">Un client</div>
                     <div className="text-sm text-gray-500">
                       Rejoindre des files d'attente
                     </div>
                   </div>
-                </Button>
+                </button>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -213,7 +211,7 @@ export default function CompleteProfile() {
                 <div className="flex space-x-3 pt-4">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="secondary"
                     onClick={() => setUserType(null)}
                     className="flex-1"
                   >
