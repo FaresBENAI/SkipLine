@@ -19,14 +19,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
-  const [debugInfo, setDebugInfo] = useState<string>('')
 
   useEffect(() => {
     // Vérifier si l'utilisateur est déjà connecté
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
-        console.log('✅ Session déjà active, redirection...')
         await redirectToCorrectDashboard(session.user.id)
       }
     }
@@ -81,26 +79,14 @@ export default function LoginPage() {
 
   const redirectToCorrectDashboard = async (userId: string) => {
     try {
-      console.log('🔍 Recherche du type d\'utilisateur pour:', userId)
-      setDebugInfo(`Recherche du profil pour ${userId}...`)
-
       // Vérifier si c'est une entreprise
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id, name')
+        .select('id')
         .eq('id', userId)
         .single()
 
-      console.log('🏢 Résultat entreprise:', { company, companyError })
-
       if (company && !companyError) {
-        console.log('✅ Utilisateur trouvé comme entreprise, redirection...')
-        setDebugInfo('Entreprise trouvée, redirection...')
-        
-        // Attendre un peu pour que la session soit bien établie
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
-        // Utiliser router.replace pour éviter les problèmes de cache
         router.replace('/dashboard/company')
         return
       }
@@ -108,37 +94,20 @@ export default function LoginPage() {
       // Vérifier si c'est un client
       const { data: client, error: clientError } = await supabase
         .from('users')
-        .select('id, first_name, last_name')
+        .select('id')
         .eq('id', userId)
         .single()
 
-      console.log('👤 Résultat client:', { client, clientError })
-
       if (client && !clientError) {
-        console.log('✅ Utilisateur trouvé comme client, redirection...')
-        setDebugInfo('Client trouvé, redirection...')
-        
-        // Attendre un peu pour que la session soit bien établie
-        await new Promise(resolve => setTimeout(resolve, 500))
-        
         router.replace('/dashboard/client')
         return
       }
 
-      // Si aucun profil trouvé
-      console.log('❌ Aucun profil trouvé')
-      setDebugInfo('Aucun profil trouvé')
-      setMessage({
-        type: 'error',
-        text: 'Profil utilisateur non trouvé. Veuillez contacter le support.'
-      })
+      // Si aucun profil trouvé, rediriger vers l'accueil
+      router.replace('/')
     } catch (error) {
       console.error('Erreur lors de la détermination du type d\'utilisateur:', error)
-      setDebugInfo(`Erreur: ${error}`)
-      setMessage({
-        type: 'error',
-        text: 'Erreur lors de la connexion. Veuillez réessayer.'
-      })
+      router.replace('/')
     }
   }
 
@@ -149,22 +118,14 @@ export default function LoginPage() {
 
     setLoading(true)
     setMessage(null)
-    setDebugInfo('Tentative de connexion...')
     
     try {
-      console.log('🔐 Tentative de connexion avec:', formData.email)
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
 
-      console.log('📊 Résultat connexion:', { data, error })
-
       if (error) {
-        console.log('❌ Erreur de connexion:', error.message)
-        setDebugInfo(`Erreur: ${error.message}`)
-        
         if (error.message.includes('Email not confirmed')) {
           setMessage({
             type: 'error',
@@ -178,24 +139,12 @@ export default function LoginPage() {
         return
       }
 
-      if (data.user && data.session) {
-        console.log('✅ Connexion réussie pour:', data.user.email)
-        console.log('🎫 Session créée:', data.session.access_token ? 'Oui' : 'Non')
-        setDebugInfo('Connexion réussie, session établie...')
-        
+      if (data.user) {
         // Rediriger vers le bon dashboard
         await redirectToCorrectDashboard(data.user.id)
-      } else {
-        console.log('❌ Pas d\'utilisateur ou de session dans la réponse')
-        setDebugInfo('Aucun utilisateur ou session retourné')
-        setMessage({
-          type: 'error',
-          text: 'Erreur de connexion inconnue'
-        })
       }
     } catch (error) {
       console.error('Erreur de connexion:', error)
-      setDebugInfo(`Erreur catch: ${error}`)
       setErrors({ email: 'Une erreur est survenue' })
     } finally {
       setLoading(false)
@@ -225,13 +174,6 @@ export default function LoginPage() {
             Accédez à votre espace SkipLine
           </p>
         </div>
-
-        {/* Debug Info */}
-        {debugInfo && (
-          <div className="mb-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600">
-            Debug: {debugInfo}
-          </div>
-        )}
 
         {/* Message de succès/erreur */}
         {message && (
