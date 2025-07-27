@@ -1,21 +1,24 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { QrCode } from 'lucide-react'
 
+// Force la page à être dynamique
+export const dynamic = 'force-dynamic'
+
 export default function AuthCallback() {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Récupérer le code depuis l'URL
-        const code = searchParams.get('code')
+        // Récupérer les paramètres depuis l'URL côté client
+        const urlParams = new URLSearchParams(window.location.search)
+        const code = urlParams.get('code')
         
         if (code) {
           // Échanger le code contre une session
@@ -76,8 +79,11 @@ export default function AuthCallback() {
       }
     }
 
-    handleAuthCallback()
-  }, [searchParams, router])
+    // Attendre que la page soit montée côté client
+    if (typeof window !== 'undefined') {
+      handleAuthCallback()
+    }
+  }, [router])
 
   if (error) {
     return (
