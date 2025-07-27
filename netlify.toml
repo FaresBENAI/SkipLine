@@ -5,7 +5,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Suppression de la règle de redirection qui causait le problème
+# [[redirects]]
+#   from = "/*"
+#   to = "/index.html"
+#   status = 200
