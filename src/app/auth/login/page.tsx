@@ -45,6 +45,40 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0
   }
 
+  const redirectToCorrectDashboard = async (userId: string) => {
+    try {
+      // Vérifier si c'est une entreprise
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .select('id')
+        .eq('id', userId)
+        .single()
+
+      if (company && !companyError) {
+        router.push('/dashboard/company')
+        return
+      }
+
+      // Vérifier si c'est un client
+      const { data: client, error: clientError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('id', userId)
+        .single()
+
+      if (client && !clientError) {
+        router.push('/dashboard/client')
+        return
+      }
+
+      // Si aucun profil trouvé, rediriger vers l'accueil
+      router.push('/')
+    } catch (error) {
+      console.error('Erreur lors de la détermination du type d\'utilisateur:', error)
+      router.push('/')
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -59,12 +93,18 @@ export default function LoginPage() {
       })
 
       if (error) {
-        setErrors({ email: 'Email ou mot de passe incorrect' })
+        if (error.message.includes('Email not confirmed')) {
+          setErrors({ email: 'Veuillez confirmer votre email avant de vous connecter' })
+        } else {
+          setErrors({ email: 'Email ou mot de passe incorrect' })
+        }
         return
       }
 
-      // Redirection vers le dashboard approprié
-      router.push('/dashboard')
+      if (data.user) {
+        // Rediriger vers le bon dashboard
+        await redirectToCorrectDashboard(data.user.id)
+      }
     } catch (error) {
       console.error('Erreur de connexion:', error)
       setErrors({ email: 'Une erreur est survenue' })

@@ -94,7 +94,11 @@ export default function RegisterPage() {
       })
 
       if (authError) {
-        setErrors({ email: authError.message })
+        if (authError.message.includes('already registered')) {
+          setErrors({ email: 'Cet email est déjà utilisé' })
+        } else {
+          setErrors({ email: authError.message })
+        }
         return
       }
 
@@ -144,8 +148,18 @@ export default function RegisterPage() {
         }
       }
 
-      // 3. Redirection
-      router.push('/dashboard')
+      // 3. Redirection avec message de succès
+      if (authData.session) {
+        // Si la session est créée immédiatement (email confirmé), rediriger vers le dashboard
+        if (userType === 'company') {
+          router.push('/dashboard/company')
+        } else {
+          router.push('/dashboard/client')
+        }
+      } else {
+        // Si confirmation email nécessaire, rediriger vers page de confirmation
+        router.push('/auth/confirmation?email=' + encodeURIComponent(formData.email))
+      }
     } catch (error) {
       console.error('Erreur d\'inscription:', error)
       setErrors({ email: 'Une erreur est survenue' })
