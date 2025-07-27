@@ -36,28 +36,28 @@ export default function HomePage() {
       title: "L'entreprise s'inscrit",
       description: "Création du compte entreprise et génération automatique du QR code unique",
       icon: Building,
-      color: "violet"
+      color: "violet" as const
     },
     {
       step: 2,
       title: "Le client scanne",
       description: "Le client scanne le QR code de l'entreprise avec son téléphone",
       icon: QrCode,
-      color: "cyan"
+      color: "cyan" as const
     },
     {
       step: 3,
       title: "Choix de la file",
       description: "Sélection de la file d'attente et saisie des informations de contact",
       icon: Users,
-      color: "emerald"
+      color: "emerald" as const
     },
     {
       step: 4,
       title: "Suivi en temps réel",
       description: "Position mise à jour automatiquement + notifications d'avancement",
       icon: Smartphone,
-      color: "violet"
+      color: "violet" as const
     }
   ]
 
@@ -238,7 +238,7 @@ export default function HomePage() {
               <div className="flex justify-center lg:justify-end">
                 <div className="relative">
                   {/* Main Phone Mockup */}
-                  <div className="glass-card w-64 sm:w-80 p-4 sm:p-6 hover:shadow-xl transition-all">
+                  <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all w-64 sm:w-80 p-4 sm:p-6">
                     <div className="space-y-4 sm:space-y-6">
                       {/* QR Code Visual */}
                       <div className="flex justify-center">
@@ -312,19 +312,43 @@ export default function HomePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
               {howItWorks.map((step, index) => {
                 const IconComponent = step.icon
-                const colorClasses = {
-                  violet: 'from-violet-500 to-violet-600 bg-violet-100 text-violet-600',
-                  cyan: 'from-cyan-500 to-cyan-600 bg-cyan-100 text-cyan-600',
-                  emerald: 'from-emerald-500 to-emerald-600 bg-emerald-100 text-emerald-600'
+                
+                // Définition stricte des couleurs avec types
+                const getColorClasses = (color: "violet" | "cyan" | "emerald") => {
+                  switch(color) {
+                    case "violet":
+                      return {
+                        iconBg: "bg-violet-100",
+                        iconText: "text-violet-600",
+                        gradientFrom: "from-violet-500",
+                        gradientTo: "to-violet-600"
+                      }
+                    case "cyan":
+                      return {
+                        iconBg: "bg-cyan-100",
+                        iconText: "text-cyan-600",
+                        gradientFrom: "from-cyan-500",
+                        gradientTo: "to-cyan-600"
+                      }
+                    case "emerald":
+                      return {
+                        iconBg: "bg-emerald-100",
+                        iconText: "text-emerald-600",
+                        gradientFrom: "from-emerald-500",
+                        gradientTo: "to-emerald-600"
+                      }
+                  }
                 }
+                
+                const colors = getColorClasses(step.color)
                 
                 return (
                   <div key={index} className="text-center">
                     <div className="relative mb-6">
-                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${colorClasses[step.color].split(' ')[2]} ${colorClasses[step.color].split(' ')[3]} mb-4`}>
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl ${colors.iconBg} ${colors.iconText} mb-4`}>
                         <IconComponent className="h-8 w-8" />
                       </div>
-                      <div className={`absolute -top-2 -right-2 bg-gradient-to-r ${colorClasses[step.color].split(' ')[0]} ${colorClasses[step.color].split(' ')[1]} text-white text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center`}>
+                      <div className={`absolute -top-2 -right-2 bg-gradient-to-r ${colors.gradientFrom} ${colors.gradientTo} text-white text-sm font-bold w-8 h-8 rounded-full flex items-center justify-center`}>
                         {step.step}
                       </div>
                     </div>
@@ -357,7 +381,7 @@ export default function HomePage() {
               {clientTypes.map((type, index) => {
                 const IconComponent = type.icon
                 return (
-                  <div key={index} className="glass-card p-6 sm:p-8 hover:shadow-xl transition-all">
+                  <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all p-6 sm:p-8">
                     <div className="flex items-center mb-6">
                       <div className="bg-gradient-to-r from-violet-100 to-cyan-100 p-3 rounded-xl mr-4">
                         <IconComponent className="h-8 w-8 text-violet-600" />
@@ -403,7 +427,7 @@ export default function HomePage() {
               {features.map((feature, index) => {
                 const IconComponent = feature.icon
                 return (
-                  <div key={index} className="glass-card p-6 sm:p-8 hover:shadow-xl transition-all">
+                  <div key={index} className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all p-6 sm:p-8">
                     <div className="flex items-start space-x-4">
                       <div className="bg-gradient-to-r from-violet-100 to-cyan-100 p-3 rounded-xl flex-shrink-0">
                         <IconComponent className="h-6 w-6 text-violet-600" />
@@ -427,7 +451,7 @@ export default function HomePage() {
         {/* CTA Final */}
         <section className="py-16 sm:py-24">
           <div className="max-w-4xl mx-auto text-center px-3 sm:px-6 lg:px-8">
-            <div className="glass-card p-8 sm:p-12">
+            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all p-8 sm:p-12">
               <Sparkles className="h-12 w-12 text-violet-600 mx-auto mb-6" />
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold gradient-text mb-4">
                 Prêt à révolutionner vos files d'attente ?
