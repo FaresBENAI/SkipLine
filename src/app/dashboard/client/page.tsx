@@ -14,27 +14,36 @@ export default function ClientDashboard() {
 
   useEffect(() => {
     const getProfile = async () => {
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        router.replace('/auth/login')
-        return
-      }
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        
+        if (!session) {
+          router.replace('/auth/login')
+          return
+        }
 
-      setUser(session.user)
-      
-      const { data: clientProfile } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', session.user.id)
-        .single()
-      
-      setProfile(clientProfile)
-      setLoading(false)
+        setUser(session.user)
+        
+        const { data: clientProfile, error } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single()
+        
+        if (error) {
+          console.error('Erreur chargement profil:', error)
+        } else {
+          setProfile(clientProfile)
+        }
+      } catch (error) {
+        console.error('Erreur session:', error)
+      } finally {
+        setLoading(false)
+      }
     }
 
     getProfile()
-  }, [router])
+  }, []) // Suppression de la dépendance [router] qui causait la boucle
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
@@ -47,6 +56,19 @@ export default function ClientDashboard() {
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mx-auto mb-4"></div>
           <p>Chargement...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!user || !profile) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50">
+        <div className="text-center">
+          <p className="text-red-600">Erreur de chargement du profil</p>
+          <Button onClick={() => router.replace('/auth/login')} className="mt-4">
+            Retour à la connexion
+          </Button>
         </div>
       </div>
     )
@@ -145,6 +167,30 @@ export default function ClientDashboard() {
                 <p className="text-sm text-gray-600">QR Code Personnel</p>
                 <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{profile?.qr_code}</p>
               </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Test de navigation */}
+        <Card className="mb-8">
+          <div className="p-6">
+            <h2 className="text-xl font-semibold mb-4">Navigation Test</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Button
+                onClick={() => alert('Bouton déconnexion cliqué!')}
+                variant="secondary"
+                className="w-full"
+              >
+                Test bouton (Alert)
+              </Button>
+              
+              <Button
+                onClick={() => console.log('Test console log')}
+                variant="primary"
+                className="w-full"
+              >
+                Test console log
+              </Button>
             </div>
           </div>
         </Card>
