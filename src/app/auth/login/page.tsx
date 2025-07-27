@@ -17,9 +17,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string[]>([])
 
-  // Supprimer complètement le useEffect qui vérifiait la session
-  // et causait la boucle de refresh
+  const addDebug = (msg: string) => {
+    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -49,18 +51,27 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!validateForm()) return
+    addDebug(`Tentative de connexion pour: ${formData.email}`)
+    
+    if (!validateForm()) {
+      addDebug('Validation du formulaire échouée')
+      return
+    }
 
     setLoading(true)
     setMessage(null)
     
     try {
+      addDebug('Appel à signInWithPassword...')
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
 
+      addDebug(`Résultat connexion: ${error ? 'ERREUR' : 'SUCCÈS'}`)
+
       if (error) {
+        addDebug(`Erreur: ${error.message}`)
         if (error.message.includes('Email not confirmed')) {
           setMessage({
             type: 'error',
@@ -75,20 +86,74 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        // Vérifier le type d'utilisateur et rediriger
-        const { data: company } = await supabase
+        addDebug(`Utilisateur connecté: ${data.user.email}`)
+        addDebug(`User ID: ${data.user.id}`)
+        
+        // Vérifier le type d'utilisateur
+        addDebug('Vérification du type d\'utilisateur...')
+        
+        const { data: company, error: companyError } = await supabase
           .from('companies')
-          .select('id')
+          .select('id, name')
           .eq('id', data.user.id)
           .single()
 
-        if (company) {
-          window.location.href = '/dashboard/company'
+        addDebug(`Recherche entreprise: ${companyError ? 'NON TROUVÉE' : 'TROUVÉE'}`)
+        
+        if (company && !companyError) {
+          addDebug(`Entreprise trouvée: ${company.name}`)
+          addDebug('Redirection vers /dashboard/company')
+          
+          // Test de redirection forcée
+          setTimeout(() => {
+            addDebug('Exécution de la redirection...')
+            window.location.href = '/dashboard/company'
+          }, 1000)
+          
+          setMessage({
+            type: 'info',
+            text: 'Connexion réussie ! Redirection vers le dashboard entreprise...'
+          })
         } else {
-          window.location.href = '/dashboard/client'
+          // Vérifier si c'est un client
+          addDebug('Vérification client...')
+          
+          const { data: client, error: clientError } = await supabase
+            .from('users')
+            .select('id, first_name, last_name')
+            .eq('id', data.user.id)
+            .single()
+
+          addDebug(`Recherche client: ${clientError ? 'NON TROUVÉ' : 'TROUVÉ'}`)
+          
+          if (client && !clientError) {
+            addDebug(`Client trouvé: ${client.first_name} ${client.last_name}`)
+            addDebug('Redirection vers /dashboard/client')
+            
+            // Test de redirection forcée
+            setTimeout(() => {
+              addDebug('Exécution de la redirection...')
+              window.location.href = '/dashboard/client'
+            }, 1000)
+            
+            setMessage({
+              type: 'info',
+              text: 'Connexion réussie ! Redirection vers le dashboard client...'
+            })
+          } else {
+            addDebug('ERREUR: Aucun profil trouvé dans les tables')
+            setMessage({
+              type: 'error',
+              text: 'Erreur: Aucun profil trouvé. Contactez le support.'
+            })
+          }
         }
+      } else {
+        addDebug('ERREUR: Aucun utilisateur dans la réponse')
+        setErrors({ email: 'Erreur de connexion' })
       }
     } catch (error) {
+      addDebug(`Exception: ${error}`)
       console.error('Erreur de connexion:', error)
       setErrors({ email: 'Une erreur est survenue' })
     } finally {
@@ -96,7 +161,7 @@ export default function LoginPage() {
     }
   }
 
-  // Vérifier les paramètres URL une seule fois au montage (pas dans useEffect)
+  // Vérifier les paramètres URL
   if (typeof window !== 'undefined') {
     const urlParams = new URLSearchParams(window.location.search)
     const messageParam = urlParams.get('message')
@@ -132,6 +197,16 @@ export default function LoginPage() {
           </p>
         </div>
 
+        {/* Debug Info */}
+        {debugInfo.length > 0 && (
+          <div className="mb-6 p-4 bg-gray-100 rounded-xl max-h-40 overflow-y-auto">
+            <h3 className="text-sm font-semibold mb-2">Debug:</h3>
+            {debugInfo.map((info, index) => (
+              <p key={index} className="text-xs text-gray-600">{info}</p>
+            ))}
+          </div>
+        )}
+
         {message && (
           <div className={`mb-6 p-4 rounded-xl border ${
             message.type === 'success' 
@@ -150,6 +225,25 @@ export default function LoginPage() {
             </div>
           </div>
         )}
+
+        {/* Test de redirection manuelle */}
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+          <p className="text-sm text-yellow-700 mb-2">Test de redirection manuelle :</p>
+          <div className="space-y-2">
+            <button 
+              onClick={() => window.location.href = '/dashboard/client'}
+              className="w-full text-left text-sm text-blue-600 underline"
+            >
+              → Aller au dashboard client
+            </button>
+            <button 
+              onClick={() => window.location.href = '/dashboard/company'}
+              className="w-full text-left text-sm text-blue-600 underline"
+            >
+              → Aller au dashboard entreprise
+            </button>
+          </div>
+        </div>
 
         <Card>
           <Card.Content>
