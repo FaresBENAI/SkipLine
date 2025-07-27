@@ -87,10 +87,13 @@ export default function RegisterPage() {
     setLoading(true)
     
     try {
-      // 1. Créer le compte utilisateur
+      // 1. Créer le compte utilisateur avec redirection vers callback
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`
+        }
       })
 
       if (authError) {
@@ -148,16 +151,16 @@ export default function RegisterPage() {
         }
       }
 
-      // 3. Redirection avec message de succès
+      // 3. Redirection selon si la session est créée ou non
       if (authData.session) {
-        // Si la session est créée immédiatement (email confirmé), rediriger vers le dashboard
+        // Session créée immédiatement (confirmation automatique)
         if (userType === 'company') {
           router.push('/dashboard/company')
         } else {
           router.push('/dashboard/client')
         }
       } else {
-        // Si confirmation email nécessaire, rediriger vers page de confirmation
+        // Confirmation email nécessaire
         router.push('/auth/confirmation?email=' + encodeURIComponent(formData.email))
       }
     } catch (error) {
