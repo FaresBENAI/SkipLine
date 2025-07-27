@@ -96,10 +96,12 @@ export default function LoginPage() {
 
       if (company && !companyError) {
         addDebug(`Entreprise trouvée: ${company.name}`)
-        setMessage({ type: 'info', text: 'Redirection vers le dashboard entreprise...' })
-        setTimeout(() => {
-          router.replace('/dashboard/company')
-        }, 1000)
+        addDebug('Redirection forcée vers /dashboard/company...')
+        
+        // Redirection forcée avec window.location
+        if (typeof window !== 'undefined') {
+          window.location.href = '/dashboard/company'
+        }
         return
       }
 
@@ -112,10 +114,12 @@ export default function LoginPage() {
 
       if (client && !clientError) {
         addDebug(`Client trouvé: ${client.first_name} ${client.last_name}`)
-        setMessage({ type: 'info', text: 'Redirection vers le dashboard client...' })
-        setTimeout(() => {
-          router.replace('/dashboard/client')
-        }, 1000)
+        addDebug('Redirection forcée vers /dashboard/client...')
+        
+        // Redirection forcée avec window.location
+        if (typeof window !== 'undefined') {
+          window.location.href = '/dashboard/client'
+        }
         return
       }
 
@@ -232,6 +236,17 @@ export default function LoginPage() {
             </div>
           </div>
         )}
+
+        {/* Lien de test direct */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <p className="text-sm text-blue-700 mb-2">Test direct :</p>
+          <a 
+            href="/dashboard/client" 
+            className="text-blue-600 underline text-sm"
+          >
+            Accéder directement au dashboard client
+          </a>
+        </div>
 
         <Card>
           <Card.Content>
