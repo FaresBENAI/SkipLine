@@ -5,8 +5,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Suppression de la règle de redirection qui causait le problème
-# [[redirects]]
-#   from = "/*"
-#   to = "/index.html"
-#   status = 200
+# Configuration spécifique pour Next.js App Router
+[build.environment]
+  NEXT_PRIVATE_TARGET = "server"
+
+# Pas de redirections custom pour laisser Next.js gérer

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Direct</title>
+</head>
+<body style="padding: 50px; font-family: Arial;">
+    <h1 style="color: green;">🎯 Test Direct HTML</h1>
+    <p>Si vous voyez cette page, Netlify fonctionne.</p>
+    <p>URL: <span id="url"></span></p>
+    <p>Timestamp: <span id="time"></span></p>
+    
+    <div style="margin-top: 20px;">
+        <a href="/dashboard/client" style="padding: 10px; background: blue; color: white; text-decoration: none; border-radius: 5px;">
+            Test /dashboard/client
+        </a>
+    </div>
+    
+    <script>
+        document.getElementById('url').textContent = window.location.href;
+        document.getElementById('time').textContent = new Date().toLocaleString();
+    </script>
+</body>
+</html>
