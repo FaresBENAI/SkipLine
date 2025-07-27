@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 export default function DebugAuth() {
   const [authState, setAuthState] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [detailedErrors, setDetailedErrors] = useState<any>(null)
+  const [detailedErrors, setDetailedErrors] = useState<any>({})
 
   useEffect(() => {
     checkAuth()
@@ -17,7 +17,7 @@ export default function DebugAuth() {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
       
       let profileData = null
-      let queryDetails = {}
+      const queryDetails: any = {}
 
       if (session?.user) {
         console.log('🔍 User ID recherché:', session.user.id)
@@ -96,13 +96,6 @@ export default function DebugAuth() {
 
       console.log('📊 Résultat avec .single():', { singleCompany, error2 })
 
-      // Test 3: Toutes les companies pour voir s'il y a des données
-      const { data: allData, error: error3 } = await supabase
-        .from('companies')
-        .select('*')
-
-      console.log('📊 Toutes les companies:', { allData, error3 })
-
       alert('Vérifiez la console pour les résultats des tests')
     } catch (error) {
       console.error('Erreur test:', error)
@@ -121,7 +114,7 @@ export default function DebugAuth() {
   return (
     <div className="min-h-screen p-8 bg-gray-100">
       <div className="max-w-4xl mx-auto bg-white p-6 rounded">
-        <h1 className="text-2xl font-bold mb-4">🔍 Debug Authentification Détaillé</h1>
+        <h1 className="text-2xl font-bold mb-4">🔍 Debug Authentification</h1>
         
         <div className="space-y-4 mb-6">
           <button 
@@ -160,15 +153,6 @@ export default function DebugAuth() {
               {JSON.stringify(detailedErrors, null, 2)}
             </pre>
           </div>
-        </div>
-
-        <div className="mt-4 space-x-2">
-          <a href="/auth/login" className="bg-purple-500 text-white px-4 py-2 rounded inline-block">
-            Aller vers Login
-          </a>
-          <a href="/dashboard" className="bg-orange-500 text-white px-4 py-2 rounded inline-block">
-            Aller vers Dashboard
-          </a>
         </div>
       </div>
     </div>
