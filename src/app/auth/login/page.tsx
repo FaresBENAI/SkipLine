@@ -79,14 +79,17 @@ export default function LoginPage() {
 
   const redirectToCorrectDashboard = async (userId: string) => {
     try {
+      console.log('🔍 Recherche du profil pour:', userId)
+      
       // Vérifier si c'est une entreprise
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, name, email')
         .eq('id', userId)
         .single()
 
       if (company && !companyError) {
+        console.log('✅ Entreprise trouvée:', company)
         router.replace('/dashboard/company')
         return
       }
@@ -94,20 +97,24 @@ export default function LoginPage() {
       // Vérifier si c'est un client
       const { data: client, error: clientError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, first_name, last_name, email')
         .eq('id', userId)
         .single()
 
       if (client && !clientError) {
+        console.log('✅ Client trouvé:', client)
         router.replace('/dashboard/client')
         return
       }
 
-      // Si aucun profil trouvé, rediriger vers l'accueil
-      router.replace('/')
+      // NOUVEAU : Si aucun profil trouvé, rediriger vers la page de création de profil
+      console.log('❌ Aucun profil trouvé - redirection vers création profil')
+      router.replace('/auth/complete-profile')
+      
     } catch (error) {
       console.error('Erreur lors de la détermination du type d\'utilisateur:', error)
-      router.replace('/')
+      // En cas d'erreur, aussi rediriger vers la création de profil
+      router.replace('/auth/complete-profile')
     }
   }
 
@@ -140,6 +147,7 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        console.log('✅ Connexion réussie pour:', data.user.email)
         // Rediriger vers le bon dashboard
         await redirectToCorrectDashboard(data.user.id)
       }
