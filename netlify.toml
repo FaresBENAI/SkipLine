@@ -5,8 +5,5 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Configuration spécifique pour Next.js App Router
-[build.environment]
-  NEXT_PRIVATE_TARGET = "server"
-
-# Pas de redirections custom pour laisser Next.js gérer
+# Le plugin Next.js gère automatiquement le routing
+# Pas besoin de redirections manuelles
