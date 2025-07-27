@@ -88,7 +88,7 @@ export default function HomePage() {
                 <QrCode className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
               </div>
               <span className="text-lg sm:text-xl font-bold gradient-text">
-                QueueSaaS
+                SkipLine
               </span>
             </Link>
 
@@ -180,7 +180,7 @@ export default function HomePage() {
                 </h1>
                 
                 <p className="text-base sm:text-lg lg:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl">
-                  Transformez l'expérience d'attente de vos clients avec notre solution moderne par QR code. 
+                  Transformez l'expérience d'attente de vos clients avec SkipLine, notre solution moderne par QR code. 
                   <span className="font-semibold text-gray-700"> Simple, efficace et sans contact.</span>
                 </p>
 

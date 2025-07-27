@@ -93,7 +93,7 @@ export default function LoginPage() {
             Connexion
           </h1>
           <p className="text-gray-600">
-            Accédez à votre espace QueueSaaS
+            Accédez à votre espace SkipLine
           </p>
         </div>
 

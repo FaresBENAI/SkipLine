@@ -174,7 +174,7 @@ export default function RegisterPage() {
             Créer un compte
           </h1>
           <p className="text-gray-600">
-            Rejoignez QueueSaaS dès maintenant
+            Rejoignez SkipLine dès maintenant
           </p>
         </div>
 

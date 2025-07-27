@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'QueueSaaS - Digitalisez vos files d\'attente',
-  description: 'Solution moderne de gestion des files d\'attente par QR code. Simplifiez l\'attente de vos clients.',
+  title: 'SkipLine - Digitalisez vos files d\'attente',
+  description: 'Solution moderne de gestion des files d\'attente par QR code. Simplifiez l\'attente de vos clients avec SkipLine.',
 }
 
 export default function RootLayout({
