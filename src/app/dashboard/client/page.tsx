@@ -1,129 +1,17 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import { QrCode, User, LogOut, Clock, Calendar, MapPin } from 'lucide-react'
+import { QrCode, User, LogOut } from 'lucide-react'
 import { Button, Card } from '@/components/ui'
 
 export default function ClientDashboard() {
-  const router = useRouter()
-  const [user, setUser] = useState<any>(null)
-  const [profile, setProfile] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-    
-    const getProfile = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        
-        if (!mounted) return
-        
-        if (!session) {
-          setError('Aucune session trouvée')
-          setLoading(false)
-          return
-        }
-
-        setUser(session.user)
-        
-        const { data: clientProfile, error: profileError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-        
-        if (!mounted) return
-        
-        if (profileError) {
-          console.error('Erreur chargement profil:', profileError)
-          setError('Erreur de chargement du profil')
-        } else {
-          setProfile(clientProfile)
-          setError(null)
-        }
-      } catch (err) {
-        if (!mounted) return
-        console.error('Erreur session:', err)
-        setError('Erreur de session')
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
-    }
-
-    getProfile()
-    
-    return () => {
-      mounted = false
-    }
-  }, []) // Aucune dépendance
-
-  const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut()
-      // Redirection forcée avec window.location au lieu de router
-      if (typeof window !== 'undefined') {
-        window.location.href = '/'
-      }
-    } catch (error) {
-      console.error('Erreur déconnexion:', error)
-    }
+  const handleClick = () => {
+    alert('Bouton cliqué - pas de refresh!')
   }
 
-  const handleBackToLogin = () => {
+  const handleSignOut = () => {
     if (typeof window !== 'undefined') {
-      window.location.href = '/auth/login'
+      window.location.href = '/'
     }
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-violet-600 mx-auto mb-4"></div>
-          <p>Chargement du profil...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50">
-        <div className="text-center">
-          <div className="mb-4">
-            <QrCode className="h-12 w-12 text-red-500 mx-auto mb-2" />
-            <p className="text-red-600 text-lg font-semibold">Problème de connexion</p>
-            <p className="text-gray-600">{error || 'Utilisateur non trouvé'}</p>
-          </div>
-          <Button onClick={handleBackToLogin} variant="primary">
-            Retour à la connexion
-          </Button>
-        </div>
-      </div>
-    )
-  }
-
-  if (!profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50">
-        <div className="text-center">
-          <div className="mb-4">
-            <User className="h-12 w-12 text-orange-500 mx-auto mb-2" />
-            <p className="text-orange-600 text-lg font-semibold">Profil non trouvé</p>
-            <p className="text-gray-600">Votre profil client n'a pas été trouvé</p>
-          </div>
-          <Button onClick={handleBackToLogin} variant="primary">
-            Retour à la connexion
-          </Button>
-        </div>
-      </div>
-    )
   }
 
   return (
@@ -136,8 +24,8 @@ export default function ClientDashboard() {
               <QrCode className="h-6 w-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard Client</h1>
-              <p className="text-gray-600">Bienvenue, {profile.first_name} {profile.last_name} !</p>
+              <h1 className="text-2xl font-bold text-gray-900">Dashboard Client - Test</h1>
+              <p className="text-gray-600">Page de test sans useEffect</p>
             </div>
           </div>
           
@@ -147,152 +35,57 @@ export default function ClientDashboard() {
           </Button>
         </div>
 
-        {/* Message de succès */}
-        <div className="mb-8 p-4 bg-green-50 border border-green-200 rounded-xl">
-          <div className="flex items-center space-x-2">
-            <div className="bg-green-500 rounded-full p-1">
-              <svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div>
-              <p className="font-semibold text-green-900">🎉 Système d'authentification parfaitement fonctionnel !</p>
-              <p className="text-green-700 text-sm">Votre flow inscription → confirmation → connexion → dashboard fonctionne à 100% !</p>
-            </div>
-          </div>
+        {/* Test Message */}
+        <div className="mb-8 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+          <h3 className="font-semibold text-yellow-900 mb-2">🧪 Page de test</h3>
+          <p className="text-yellow-700 text-sm">
+            Cette page n'a aucun useEffect, aucune logique de session. 
+            Si elle se refresh encore, le problème vient d'ailleurs (middleware, layout, etc.)
+          </p>
         </div>
 
-        {/* Test Status */}
-        <div className="mb-8 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <h3 className="font-semibold text-blue-900 mb-2">Status du système :</h3>
-          <div className="space-y-1 text-sm">
-            <p className="text-blue-700">✅ Inscription fonctionnelle</p>
-            <p className="text-blue-700">✅ Confirmation email fonctionnelle</p>
-            <p className="text-blue-700">✅ Connexion fonctionnelle</p>
-            <p className="text-blue-700">✅ Dashboard client fonctionnel</p>
-            <p className="text-blue-700">✅ Profil chargé correctement</p>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Votre QR Code</p>
-                <p className="text-lg font-semibold text-gray-900">{profile.qr_code}</p>
-              </div>
-              <QrCode className="h-8 w-8 text-cyan-600" />
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="text-lg font-semibold text-gray-900">{user.email}</p>
-              </div>
-              <User className="h-8 w-8 text-violet-600" />
-            </div>
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Téléphone</p>
-                <p className="text-lg font-semibold text-gray-900">{profile.phone || 'Non renseigné'}</p>
-              </div>
-              <User className="h-8 w-8 text-emerald-600" />
-            </div>
-          </Card>
-        </div>
-
-        {/* Profil Details */}
+        {/* Test Card */}
         <Card className="mb-8">
           <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <User className="h-5 w-5 mr-2 text-violet-600" />
-              Mon Profil
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Prénom</p>
-                <p className="font-semibold">{profile.first_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Nom</p>
-                <p className="font-semibold">{profile.last_name}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Email</p>
-                <p className="font-semibold">{profile.email}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">QR Code Personnel</p>
-                <p className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">{profile.qr_code}</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Test de navigation */}
-        <Card className="mb-8">
-          <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Test des interactions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <Button
-                onClick={() => alert('✅ Les boutons fonctionnent parfaitement!')}
-                variant="primary"
-                className="w-full"
-              >
-                Test Alert
+            <h2 className="text-xl font-semibold mb-4">Test d'interactions</h2>
+            <div className="space-y-4">
+              <Button onClick={handleClick} variant="primary" className="w-full">
+                Cliquez-moi (Test Alert)
               </Button>
               
-              <Button
-                onClick={() => {
-                  const now = new Date().toLocaleTimeString()
-                  console.log(`✅ Console log fonctionne! - ${now}`)
-                  alert(`Console log à ${now} - vérifiez F12`)
-                }}
-                variant="secondary"
+              <Button 
+                onClick={() => console.log('Test console:', new Date().toLocaleTimeString())} 
+                variant="secondary" 
                 className="w-full"
               >
-                Test Console
+                Test Console Log
               </Button>
-
-              <Button
-                onClick={handleSignOut}
-                variant="danger"
+              
+              <Button 
+                onClick={() => {
+                  const div = document.createElement('div')
+                  div.innerHTML = 'Test DOM - ' + new Date().toLocaleTimeString()
+                  div.className = 'p-2 bg-green-100 border border-green-300 rounded mt-2'
+                  document.body.appendChild(div)
+                  setTimeout(() => document.body.removeChild(div), 3000)
+                }}
+                variant="success" 
                 className="w-full"
               >
-                Test Déconnexion
+                Test Manipulation DOM
               </Button>
             </div>
           </div>
         </Card>
 
-        {/* Actions disponibles */}
+        {/* Info Card */}
         <Card>
           <div className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Prochaines étapes</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 border border-gray-200 rounded-lg text-center">
-                <QrCode className="h-8 w-8 text-violet-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1">Scanner QR</h3>
-                <p className="text-sm text-gray-600">Rejoindre des files d'attente</p>
-              </div>
-              
-              <div className="p-4 border border-gray-200 rounded-lg text-center">
-                <Clock className="h-8 w-8 text-cyan-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1">Gestion Files</h3>
-                <p className="text-sm text-gray-600">Créer et gérer les files</p>
-              </div>
-              
-              <div className="p-4 border border-gray-200 rounded-lg text-center">
-                <Calendar className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-                <h3 className="font-semibold mb-1">Notifications</h3>
-                <p className="text-sm text-gray-600">Système temps réel</p>
-              </div>
+            <h2 className="text-xl font-semibold mb-4">Informations</h2>
+            <div className="space-y-2 text-sm">
+              <p><strong>URL actuelle:</strong> {typeof window !== 'undefined' ? window.location.href : 'N/A'}</p>
+              <p><strong>Timestamp:</strong> {new Date().toLocaleString()}</p>
+              <p><strong>User Agent:</strong> {typeof window !== 'undefined' ? navigator.userAgent.substring(0, 50) + '...' : 'N/A'}</p>
             </div>
           </div>
         </Card>
