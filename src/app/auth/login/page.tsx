@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { QrCode, Eye, EyeOff, LogIn, ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react'
 import { Button, Input, Card } from '@/components/ui'
 import { supabase } from '@/lib/supabase'
@@ -10,7 +9,6 @@ import { isValidEmail } from '@/lib/utils'
 import type { AuthFormData } from '@/types'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [formData, setFormData] = useState<AuthFormData>({
     email: '',
     password: ''
@@ -19,44 +17,9 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null)
-  const [debugInfo, setDebugInfo] = useState<string[]>([])
 
-  const addDebug = (msg: string) => {
-    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`])
-  }
-
-  useEffect(() => {
-    const checkSession = async () => {
-      addDebug('Vérification session existante...')
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session) {
-        addDebug(`Session trouvée pour: ${session.user.email}`)
-        await redirectToCorrectDashboard(session.user.id)
-      } else {
-        addDebug('Aucune session existante')
-      }
-    }
-
-    checkSession()
-
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search)
-      const messageParam = urlParams.get('message')
-      const errorParam = urlParams.get('error')
-      
-      if (messageParam === 'confirmed') {
-        setMessage({
-          type: 'success',
-          text: 'Email confirmé avec succès ! Vous pouvez maintenant vous connecter.'
-        })
-      } else if (errorParam === 'callback') {
-        setMessage({
-          type: 'error',
-          text: 'Erreur lors de la confirmation. Veuillez réessayer.'
-        })
-      }
-    }
-  }, [])
+  // Supprimer complètement le useEffect qui vérifiait la session
+  // et causait la boucle de refresh
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -83,66 +46,8 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  const redirectToCorrectDashboard = async (userId: string) => {
-    try {
-      addDebug(`Recherche du profil pour: ${userId}`)
-      
-      // Vérifier si c'est une entreprise
-      const { data: company, error: companyError } = await supabase
-        .from('companies')
-        .select('id, name, email')
-        .eq('id', userId)
-        .single()
-
-      if (company && !companyError) {
-        addDebug(`Entreprise trouvée: ${company.name}`)
-        addDebug('Redirection forcée vers /dashboard/company...')
-        
-        // Redirection forcée avec window.location
-        if (typeof window !== 'undefined') {
-          window.location.href = '/dashboard/company'
-        }
-        return
-      }
-
-      // Vérifier si c'est un client
-      const { data: client, error: clientError } = await supabase
-        .from('users')
-        .select('id, first_name, last_name, email')
-        .eq('id', userId)
-        .single()
-
-      if (client && !clientError) {
-        addDebug(`Client trouvé: ${client.first_name} ${client.last_name}`)
-        addDebug('Redirection forcée vers /dashboard/client...')
-        
-        // Redirection forcée avec window.location
-        if (typeof window !== 'undefined') {
-          window.location.href = '/dashboard/client'
-        }
-        return
-      }
-
-      // Si aucun profil trouvé
-      addDebug('Aucun profil trouvé dans les tables')
-      setMessage({
-        type: 'error',
-        text: 'Aucun profil trouvé. Il y a eu un problème lors de l\'inscription.'
-      })
-      
-    } catch (error) {
-      addDebug(`Erreur: ${error}`)
-      setMessage({
-        type: 'error',
-        text: 'Erreur lors de la connexion. Veuillez réessayer.'
-      })
-    }
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    addDebug(`Tentative de connexion pour: ${formData.email}`)
     
     if (!validateForm()) return
 
@@ -156,7 +61,6 @@ export default function LoginPage() {
       })
 
       if (error) {
-        addDebug(`Erreur connexion: ${error.message}`)
         if (error.message.includes('Email not confirmed')) {
           setMessage({
             type: 'error',
@@ -171,17 +75,37 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        addDebug(`Connexion réussie pour: ${data.user.email}`)
-        await redirectToCorrectDashboard(data.user.id)
-      } else {
-        addDebug('Aucun utilisateur dans la réponse')
-        setErrors({ email: 'Erreur de connexion' })
+        // Vérifier le type d'utilisateur et rediriger
+        const { data: company } = await supabase
+          .from('companies')
+          .select('id')
+          .eq('id', data.user.id)
+          .single()
+
+        if (company) {
+          window.location.href = '/dashboard/company'
+        } else {
+          window.location.href = '/dashboard/client'
+        }
       }
     } catch (error) {
-      addDebug(`Exception: ${error}`)
+      console.error('Erreur de connexion:', error)
       setErrors({ email: 'Une erreur est survenue' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Vérifier les paramètres URL une seule fois au montage (pas dans useEffect)
+  if (typeof window !== 'undefined') {
+    const urlParams = new URLSearchParams(window.location.search)
+    const messageParam = urlParams.get('message')
+    
+    if (messageParam === 'confirmed' && !message) {
+      setMessage({
+        type: 'success',
+        text: 'Email confirmé avec succès ! Vous pouvez maintenant vous connecter.'
+      })
     }
   }
 
@@ -208,16 +132,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Debug Info */}
-        {debugInfo.length > 0 && (
-          <div className="mb-6 p-4 bg-gray-100 rounded-xl max-h-32 overflow-y-auto">
-            <h3 className="text-sm font-semibold mb-2">Debug:</h3>
-            {debugInfo.map((info, index) => (
-              <p key={index} className="text-xs text-gray-600">{info}</p>
-            ))}
-          </div>
-        )}
-
         {message && (
           <div className={`mb-6 p-4 rounded-xl border ${
             message.type === 'success' 
@@ -236,17 +150,6 @@ export default function LoginPage() {
             </div>
           </div>
         )}
-
-        {/* Lien de test direct */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <p className="text-sm text-blue-700 mb-2">Test direct :</p>
-          <a 
-            href="/dashboard/client" 
-            className="text-blue-600 underline text-sm"
-          >
-            Accéder directement au dashboard client
-          </a>
-        </div>
 
         <Card>
           <Card.Content>
