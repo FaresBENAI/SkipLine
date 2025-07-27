@@ -21,7 +21,6 @@ export default function LoginPage() {
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
   useEffect(() => {
-    // Vérifier si l'utilisateur est déjà connecté
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession()
       if (session) {
@@ -31,7 +30,6 @@ export default function LoginPage() {
 
     checkSession()
 
-    // Récupérer les messages depuis l'URL
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
       const messageParam = urlParams.get('message')
@@ -54,7 +52,6 @@ export default function LoginPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    // Effacer l'erreur si elle existe
     if (errors[name as keyof AuthFormData]) {
       setErrors(prev => ({ ...prev, [name]: undefined }))
     }
@@ -79,17 +76,14 @@ export default function LoginPage() {
 
   const redirectToCorrectDashboard = async (userId: string) => {
     try {
-      console.log('🔍 Recherche du profil pour:', userId)
-      
       // Vérifier si c'est une entreprise
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id, name, email')
+        .select('id')
         .eq('id', userId)
         .single()
 
       if (company && !companyError) {
-        console.log('✅ Entreprise trouvée:', company)
         router.replace('/dashboard/company')
         return
       }
@@ -97,24 +91,24 @@ export default function LoginPage() {
       // Vérifier si c'est un client
       const { data: client, error: clientError } = await supabase
         .from('users')
-        .select('id, first_name, last_name, email')
+        .select('id')
         .eq('id', userId)
         .single()
 
       if (client && !clientError) {
-        console.log('✅ Client trouvé:', client)
         router.replace('/dashboard/client')
         return
       }
 
-      // NOUVEAU : Si aucun profil trouvé, rediriger vers la page de création de profil
-      console.log('❌ Aucun profil trouvé - redirection vers création profil')
-      router.replace('/auth/complete-profile')
+      // Si aucun profil trouvé, rediriger vers l'inscription
+      console.log('Aucun profil trouvé, redirection vers inscription')
+      await supabase.auth.signOut()
+      router.replace('/auth/register?error=no-profile')
       
     } catch (error) {
       console.error('Erreur lors de la détermination du type d\'utilisateur:', error)
-      // En cas d'erreur, aussi rediriger vers la création de profil
-      router.replace('/auth/complete-profile')
+      await supabase.auth.signOut()
+      router.replace('/auth/register?error=profile-error')
     }
   }
 
@@ -147,8 +141,6 @@ export default function LoginPage() {
       }
 
       if (data.user) {
-        console.log('✅ Connexion réussie pour:', data.user.email)
-        // Rediriger vers le bon dashboard
         await redirectToCorrectDashboard(data.user.id)
       }
     } catch (error) {
@@ -162,7 +154,6 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-50 via-cyan-50 to-emerald-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center space-x-2 mb-6 text-violet-600 hover:text-violet-800 transition-colors">
             <ArrowLeft className="h-5 w-5" />
@@ -183,7 +174,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Message de succès/erreur */}
         {message && (
           <div className={`mb-6 p-4 rounded-xl border ${
             message.type === 'success' 
@@ -201,7 +191,6 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Formulaire */}
         <Card>
           <Card.Content>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -263,7 +252,6 @@ export default function LoginPage() {
           </Card.Content>
         </Card>
 
-        {/* Lien vers inscription */}
         <div className="text-center mt-6">
           <p className="text-gray-600">
             Pas encore de compte ?{' '}
