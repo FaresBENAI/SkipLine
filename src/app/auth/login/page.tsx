@@ -22,6 +22,17 @@ export default function LoginPage() {
   const [debugInfo, setDebugInfo] = useState<string>('')
 
   useEffect(() => {
+    // Vérifier si l'utilisateur est déjà connecté
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session) {
+        console.log('✅ Session déjà active, redirection...')
+        await redirectToCorrectDashboard(session.user.id)
+      }
+    }
+
+    checkSession()
+
     // Récupérer les messages depuis l'URL
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search)
@@ -85,7 +96,12 @@ export default function LoginPage() {
       if (company && !companyError) {
         console.log('✅ Utilisateur trouvé comme entreprise, redirection...')
         setDebugInfo('Entreprise trouvée, redirection...')
-        router.push('/dashboard/company')
+        
+        // Attendre un peu pour que la session soit bien établie
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        // Utiliser router.replace pour éviter les problèmes de cache
+        router.replace('/dashboard/company')
         return
       }
 
@@ -101,7 +117,11 @@ export default function LoginPage() {
       if (client && !clientError) {
         console.log('✅ Utilisateur trouvé comme client, redirection...')
         setDebugInfo('Client trouvé, redirection...')
-        router.push('/dashboard/client')
+        
+        // Attendre un peu pour que la session soit bien établie
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
+        router.replace('/dashboard/client')
         return
       }
 
@@ -158,16 +178,16 @@ export default function LoginPage() {
         return
       }
 
-      if (data.user) {
+      if (data.user && data.session) {
         console.log('✅ Connexion réussie pour:', data.user.email)
-        console.log('📋 Données utilisateur:', data.user)
-        setDebugInfo('Connexion réussie, recherche du profil...')
+        console.log('🎫 Session créée:', data.session.access_token ? 'Oui' : 'Non')
+        setDebugInfo('Connexion réussie, session établie...')
         
         // Rediriger vers le bon dashboard
         await redirectToCorrectDashboard(data.user.id)
       } else {
-        console.log('❌ Pas d\'utilisateur dans la réponse')
-        setDebugInfo('Aucun utilisateur retourné')
+        console.log('❌ Pas d\'utilisateur ou de session dans la réponse')
+        setDebugInfo('Aucun utilisateur ou session retourné')
         setMessage({
           type: 'error',
           text: 'Erreur de connexion inconnue'
