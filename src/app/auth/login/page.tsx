@@ -19,6 +19,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [debugInfo, setDebugInfo] = useState<string>('')
 
   useEffect(() => {
     // Récupérer les messages depuis l'URL
@@ -69,14 +70,21 @@ export default function LoginPage() {
 
   const redirectToCorrectDashboard = async (userId: string) => {
     try {
+      console.log('🔍 Recherche du type d\'utilisateur pour:', userId)
+      setDebugInfo(`Recherche du profil pour ${userId}...`)
+
       // Vérifier si c'est une entreprise
       const { data: company, error: companyError } = await supabase
         .from('companies')
-        .select('id')
+        .select('id, name')
         .eq('id', userId)
         .single()
 
+      console.log('🏢 Résultat entreprise:', { company, companyError })
+
       if (company && !companyError) {
+        console.log('✅ Utilisateur trouvé comme entreprise, redirection...')
+        setDebugInfo('Entreprise trouvée, redirection...')
         router.push('/dashboard/company')
         return
       }
@@ -84,20 +92,33 @@ export default function LoginPage() {
       // Vérifier si c'est un client
       const { data: client, error: clientError } = await supabase
         .from('users')
-        .select('id')
+        .select('id, first_name, last_name')
         .eq('id', userId)
         .single()
 
+      console.log('👤 Résultat client:', { client, clientError })
+
       if (client && !clientError) {
+        console.log('✅ Utilisateur trouvé comme client, redirection...')
+        setDebugInfo('Client trouvé, redirection...')
         router.push('/dashboard/client')
         return
       }
 
-      // Si aucun profil trouvé, rediriger vers l'accueil
-      router.push('/')
+      // Si aucun profil trouvé
+      console.log('❌ Aucun profil trouvé')
+      setDebugInfo('Aucun profil trouvé')
+      setMessage({
+        type: 'error',
+        text: 'Profil utilisateur non trouvé. Veuillez contacter le support.'
+      })
     } catch (error) {
       console.error('Erreur lors de la détermination du type d\'utilisateur:', error)
-      router.push('/')
+      setDebugInfo(`Erreur: ${error}`)
+      setMessage({
+        type: 'error',
+        text: 'Erreur lors de la connexion. Veuillez réessayer.'
+      })
     }
   }
 
@@ -108,14 +129,22 @@ export default function LoginPage() {
 
     setLoading(true)
     setMessage(null)
+    setDebugInfo('Tentative de connexion...')
     
     try {
+      console.log('🔐 Tentative de connexion avec:', formData.email)
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
 
+      console.log('📊 Résultat connexion:', { data, error })
+
       if (error) {
+        console.log('❌ Erreur de connexion:', error.message)
+        setDebugInfo(`Erreur: ${error.message}`)
+        
         if (error.message.includes('Email not confirmed')) {
           setMessage({
             type: 'error',
@@ -130,11 +159,23 @@ export default function LoginPage() {
       }
 
       if (data.user) {
+        console.log('✅ Connexion réussie pour:', data.user.email)
+        console.log('📋 Données utilisateur:', data.user)
+        setDebugInfo('Connexion réussie, recherche du profil...')
+        
         // Rediriger vers le bon dashboard
         await redirectToCorrectDashboard(data.user.id)
+      } else {
+        console.log('❌ Pas d\'utilisateur dans la réponse')
+        setDebugInfo('Aucun utilisateur retourné')
+        setMessage({
+          type: 'error',
+          text: 'Erreur de connexion inconnue'
+        })
       }
     } catch (error) {
       console.error('Erreur de connexion:', error)
+      setDebugInfo(`Erreur catch: ${error}`)
       setErrors({ email: 'Une erreur est survenue' })
     } finally {
       setLoading(false)
@@ -164,6 +205,13 @@ export default function LoginPage() {
             Accédez à votre espace SkipLine
           </p>
         </div>
+
+        {/* Debug Info */}
+        {debugInfo && (
+          <div className="mb-4 p-3 bg-gray-100 rounded-lg text-xs text-gray-600">
+            Debug: {debugInfo}
+          </div>
+        )}
 
         {/* Message de succès/erreur */}
         {message && (
